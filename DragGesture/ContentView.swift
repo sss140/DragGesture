@@ -87,7 +87,7 @@ struct OverlayView: View {
                     
                     HStack{
                         Text("Opacity:\(String(format:"%.1f", self.opacity))")
-                        .foregroundColor(.gray)
+                            .foregroundColor(.gray)
                         Slider(value: self.$opacity, in: 0...1)
                     }.padding(10)
                     
@@ -99,13 +99,13 @@ struct OverlayView: View {
                         self.colorString = self.colors[self.colorIndex].description
                     }){
                         HStack{
-                        Text("Color:\(self.colorString)")
-                            .foregroundColor(.gray)
+                            Text("Color:\(self.colorString)")
+                                .foregroundColor(.gray)
                             
-                        Spacer()
-                        Image(systemName: "square.fill")
-                            .font(.largeTitle)
-                            .foregroundColor(self.colors[self.colorIndex])
+                            Spacer()
+                            Image(systemName: "square.fill")
+                                .font(.largeTitle)
+                                .foregroundColor(self.colors[self.colorIndex])
                             
                         }.padding(10.0)
                     }
@@ -117,13 +117,13 @@ struct OverlayView: View {
                         }){
                             
                             Text("Undo Drawing")
-                            .foregroundColor(.gray)
-                                
+                                .foregroundColor(.gray)
+                            
                             Spacer()
                             Image(systemName: "arrow.uturn.left.square.fill")
                                 .font(.largeTitle)
                                 .foregroundColor(.gray)
-                                
+                            
                         }.padding(10.0)
                     }
                     VStack {
@@ -149,13 +149,13 @@ struct SubContentView: View {
             Image(uiImage: self.uiImage)
                 .resizable()
                 .frame(width: 200 * 0.99, height: 300 * 0.99)
-                .modifier(FlipEffect(index: 0, initialAngle: 0.0, angle: self.angle, zIndex: self.$zIndex[0]))
+                .modifier(FlipEffect( initialAngle: .pi, angle: self.angle, zIndex: self.$zIndex[0]))
                 .zIndex(self.zIndex[0])
             
             Image("blue_back")
                 .resizable()
                 .frame(width: 200, height: 300)
-                .modifier(FlipEffect(index: 1, initialAngle: 0.0, angle: self.angle, zIndex: self.$zIndex[1]))
+                .modifier(FlipEffect( initialAngle: 0.0, angle: self.angle, zIndex: self.$zIndex[1]))
                 .zIndex(self.zIndex[1])
             
         }.onTapGesture {
@@ -167,16 +167,11 @@ struct SubContentView: View {
 }
 
 struct FlipEffect:GeometryEffect{
-    let index:Int
     let initialAngle:CGFloat
     var angle:CGFloat
     
     
-    @Binding var zIndex:Double{
-        willSet{
-            print(newValue)
-        }
-    }
+    @Binding var zIndex:Double
     
     var animatableData: CGFloat{
         get{angle}
@@ -186,13 +181,12 @@ struct FlipEffect:GeometryEffect{
     func effectValue(size: CGSize) -> ProjectionTransform {
         var transform3d = CATransform3DIdentity
         transform3d.m34 = -1/max(size.width, size.height)
-        transform3d = CATransform3DRotate(transform3d, self.angle, 1.0, 5.0, 0.0)
+        
+        transform3d = CATransform3DRotate(transform3d, self.angle, 1.0, 5.0, 2.0)
+        transform3d = CATransform3DRotate(transform3d, self.initialAngle, 0.0, 1.0, 0.0)
         transform3d = CATransform3DTranslate(transform3d, -size.width/2, -size.height/2, 0.0)
         DispatchQueue.main.async {
-            self.zIndex = Double(transform3d.m34)
-            if self.index == 1{
-                self.zIndex *= -1
-            }
+            self.zIndex = Double(transform3d.m34) * ((self.initialAngle == .pi) ? -1: 1)
         }
         let affineTransform = ProjectionTransform(CGAffineTransform(translationX: size.width/2, y: size.height/2))
         return ProjectionTransform(transform3d).concatenating(affineTransform)
